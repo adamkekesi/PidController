@@ -5,17 +5,17 @@
 const unsigned int samplingRate = 4000;
 const double maxOutputVoltage = 5.0;
 
-const int setPointPin = PD6;
-const int sensorPin = PB6;
-const int airQualityPin = PD4;
+const int setPointPin = PIN_A11;
+const int sensorPin = PIN_A10;
+const int airQualityPin = PIN_A6;
 
-const int extractFanOutputPin = PB5;
-const int insertFanOutputPin = PD7;
+const int extractFanOutputPin = 9;
+const int insertFanOutputPin = 6;
 
-const int bypassPin = PB4;
-const int nightPin = PD0;
-const int coPin = PE6;
-const int disablePin = PC6;
+const int bypassPin = 8;
+const int nightPin = 3;
+const int coPin = 7;
+const int disablePin = 5;
 
 volatile bool co = false;
 volatile unsigned long coTriggerTime = 0;
@@ -186,7 +186,6 @@ void loop()
   out += "\nlevegomin:  ";
   out += (maxOutputVoltage / 1023) * analogRead(airQualityPin);
   Serial.println(out);
-  analogWrite(extractFanOutputPin, 255);
-  //controlFans(mode);
+  controlFans(mode);
   delay(samplingRate);
 }
