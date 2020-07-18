@@ -2,7 +2,7 @@
 #include "PidController.h"
 #include <stdlib.h>
 
-const unsigned int samplingRate = 4000;
+const unsigned int samplingRate = 500;
 const double maxOutputVoltage = 5.0;
 
 const int setPointPin = PIN_A11;
@@ -90,7 +90,7 @@ double controlWithRanges()
 
 void controlFans(int mode)
 {
-  int disable = 0; //digitalRead(disablePin);
+  int disable = digitalRead(disablePin);
   double extractFanOutput;
   double insertFanOutput;
   if (mode == 1)
@@ -102,7 +102,7 @@ void controlFans(int mode)
   if (mode == 2)
   {
     insertFanOutput = controlWithRanges();
-    extractFanOutput = insertFanOutput + 1;
+    extractFanOutput = insertFanOutput - 0.5;
   }
 
   if (mode == 3)
@@ -114,7 +114,7 @@ void controlFans(int mode)
   if (mode == 4)
   {
     insertFanOutput = 2;
-    extractFanOutput = 2.5;
+    extractFanOutput = 1.2;
   }
 
   if (co)
