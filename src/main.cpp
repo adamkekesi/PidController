@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "PidController.h"
 #include <stdlib.h>
+#include "Transition.h"
 
 const unsigned int samplingRate = 500;
 const double maxOutputVoltage = 5.0;
@@ -31,6 +32,7 @@ double ranges[5][3] =
 int lastRange = 0;
 
 PidController controller = PidController(0.2, 0.001, samplingRate, maxOutputVoltage);
+Transition *transition = NULL;
 
 void onCoTrigger()
 {
@@ -65,6 +67,7 @@ double controlWithPid()
 double controlWithRanges()
 {
   double sensorValue = (maxOutputVoltage / 1023) * analogRead(airQualityPin);
+  double lastGoal = ranges[lastRange][2];
   int range;
 
   double lastLower = ranges[lastRange][0] - 0.05;
@@ -80,12 +83,24 @@ double controlWithRanges()
     }
   }
 
+  double goal;
+
   if (lastRange - range == 1 && sensorValue >= lastLower)
   {
-    return ranges[lastRange][2];
+    goal = ranges[lastRange][2];
   }
-  lastRange = range;
-  return ranges[range][2];
+  else
+  {
+    goal = ranges[range][2];
+    lastRange = range;
+  }
+
+  if (transition == NULL || transition->mGoal != goal)
+  {
+    delete transition;
+    transition = new Transition(lastGoal, goal, 1000 * 60);
+  }
+  return transition->NextFrame();
 }
 
 void controlFans(int mode)
@@ -114,7 +129,7 @@ void controlFans(int mode)
   if (mode == 4)
   {
     insertFanOutput = 2;
-    extractFanOutput = 1.2;
+    extractFanOutput = 1.8;
   }
 
   if (co)
