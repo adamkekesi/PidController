@@ -98,7 +98,7 @@ double controlWithRanges()
   if (transition == NULL || transition->mGoal != goal)
   {
     delete transition;
-    transition = new Transition(lastGoal, goal, 1000 * 60);
+    transition = new Transition(lastGoal, goal, 1000L * 60L);
   }
   return transition->NextFrame();
 }
