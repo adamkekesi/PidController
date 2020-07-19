@@ -117,7 +117,7 @@ void controlFans(int mode)
   if (mode == 2)
   {
     insertFanOutput = controlWithRanges();
-    extractFanOutput = insertFanOutput - 0.5;
+    extractFanOutput = insertFanOutput * 0.83;
   }
 
   if (mode == 3)
