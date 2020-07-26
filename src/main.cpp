@@ -4,6 +4,7 @@
 #include "Transition.h"
 
 const unsigned int samplingRate = 500;
+const unsigned int airQualitySamplingRate = 2000;
 const double maxOutputVoltage = 5.0;
 
 const int setPointPin = PIN_A11;
@@ -17,6 +18,9 @@ const int bypassPin = 8;
 const int nightPin = 3;
 const int coPin = 7;
 const int disablePin = 5;
+
+double airQualityBuffer[4] = {-1, -1, -1, -1};
+long lastAirQualitySample = 0;
 
 volatile bool co = false;
 volatile unsigned long coTriggerTime = 0;
@@ -66,7 +70,52 @@ double controlWithPid()
 
 double controlWithRanges()
 {
-  double sensorValue = (maxOutputVoltage / 1023) * analogRead(airQualityPin);
+  if (millis() >= lastAirQualitySample + airQualitySamplingRate)
+  {
+    lastAirQualitySample = millis();
+    if (airQualityBuffer[3] == -1)
+    {
+      for (int i = 0; i < 4; i++)
+      {
+        if (airQualityBuffer[i] == -1)
+        {
+          airQualityBuffer[i] = (maxOutputVoltage / 1023) * analogRead(airQualityPin);
+          break;
+        }
+      }
+    }
+    else
+    {
+      for (int i = 1; i < 4; i++)
+      {
+        airQualityBuffer[i - 1] = airQualityBuffer[i];
+      }
+      airQualityBuffer[3] = (maxOutputVoltage / 1023) * analogRead(airQualityPin);
+    }
+  }
+
+  double sensorValue;
+  int count = 0;
+  double sum = 0;
+  for (int i = 0; i < 4; i++)
+  {
+    double val = airQualityBuffer[i];
+    if (val != -1)
+    {
+      count++;
+      sum += val;
+    }
+  }
+
+  if (count == 0)
+  {
+    sensorValue = 0;
+  }
+  else
+  {
+    sensorValue = sum / count;
+  }
+
   double lastGoal = ranges[lastRange][2];
   int range;
 
@@ -135,6 +184,7 @@ void controlFans(int mode)
   if (co)
   {
     extractFanOutput = 0;
+    insertFanOutput = 5;
   }
 
   if (disable)
@@ -190,6 +240,7 @@ void loop()
   }
 
   int mode = getMode();
+  controlFans(mode);
   String out = String("\n\nmód: ");
   out += mode;
   out += "\nco: ";
@@ -198,9 +249,14 @@ void loop()
   out += (maxOutputVoltage / 1023) * analogRead(setPointPin);
   out += "\nsensor: ";
   out += (maxOutputVoltage / 1023) * analogRead(sensorPin);
-  out += "\nlevegomin:  ";
+  out += "\nlevegőmin:  ";
   out += (maxOutputVoltage / 1023) * analogRead(airQualityPin);
+  out += "\nlevegőmin buffer: ";
+  for (int i = 0; i < 4; i++)
+  {
+    out += airQualityBuffer[i];
+    out += "\t";
+  }
   Serial.println(out);
-  controlFans(mode);
   delay(samplingRate);
 }
