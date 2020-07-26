@@ -233,10 +233,18 @@ int getMode()
 
 void loop()
 {
-  long time = 60L * 1000L;
-  if (co && millis() > coTriggerTime + time)
+  if (digitalRead(coPin))
   {
-    co = false;
+    co = true;
+    coTriggerTime = millis();
+  }
+  else
+  {
+    long time = 60L * 1000L;
+    if (co && millis() > coTriggerTime + time)
+    {
+      co = false;
+    }
   }
 
   int mode = getMode();
