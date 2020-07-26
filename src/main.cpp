@@ -4,7 +4,7 @@
 #include "Transition.h"
 
 const unsigned int samplingRate = 500;
-const unsigned int airQualitySamplingRate = 2000;
+const unsigned int airQualitySamplingRate = 10000;
 const double maxOutputVoltage = 5.0;
 
 const int setPointPin = PIN_A11;
