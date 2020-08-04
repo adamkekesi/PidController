@@ -70,30 +70,6 @@ double controlWithPid()
 
 double controlWithRanges()
 {
-  if (millis() >= lastAirQualitySample + airQualitySamplingRate)
-  {
-    lastAirQualitySample = millis();
-    if (airQualityBuffer[3] == -1)
-    {
-      for (int i = 0; i < 4; i++)
-      {
-        if (airQualityBuffer[i] == -1)
-        {
-          airQualityBuffer[i] = (maxOutputVoltage / 1023) * analogRead(airQualityPin);
-          break;
-        }
-      }
-    }
-    else
-    {
-      for (int i = 1; i < 4; i++)
-      {
-        airQualityBuffer[i - 1] = airQualityBuffer[i];
-      }
-      airQualityBuffer[3] = (maxOutputVoltage / 1023) * analogRead(airQualityPin);
-    }
-  }
-
   double sensorValue;
   int count = 0;
   double sum = 0;
@@ -231,6 +207,33 @@ int getMode()
   return -1;
 }
 
+void sampleAirQuality()
+{
+  if (millis() >= lastAirQualitySample + airQualitySamplingRate)
+  {
+    lastAirQualitySample = millis();
+    if (airQualityBuffer[3] == -1)
+    {
+      for (int i = 0; i < 4; i++)
+      {
+        if (airQualityBuffer[i] == -1)
+        {
+          airQualityBuffer[i] = (maxOutputVoltage / 1023) * analogRead(airQualityPin);
+          break;
+        }
+      }
+    }
+    else
+    {
+      for (int i = 1; i < 4; i++)
+      {
+        airQualityBuffer[i - 1] = airQualityBuffer[i];
+      }
+      airQualityBuffer[3] = (maxOutputVoltage / 1023) * analogRead(airQualityPin);
+    }
+  }
+}
+
 void loop()
 {
   if (digitalRead(coPin))
@@ -246,7 +249,7 @@ void loop()
       co = false;
     }
   }
-
+  sampleAirQuality();
   int mode = getMode();
   controlFans(mode);
   String out = String("\n\nmód: ");
