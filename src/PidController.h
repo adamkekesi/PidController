@@ -10,7 +10,6 @@ private:
     double mPreviousIntegral;
     double mSamplingRate;
     double mMaxOutputVoltage;
-    int mDisableUntil = -1;
 
 public:
     PidController(double proportionalAmplifier, double integralAmplifier, double samplingRate, double maxOutputVoltage)
@@ -29,6 +28,7 @@ private:
 
 public:
     double CalculateOutput(double sensorData, double expected);
+    void Reset();
 };
 
 #endif // !PidController_h

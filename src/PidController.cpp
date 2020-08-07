@@ -27,3 +27,8 @@ double PidController::CalculateIntegralAction(double currentError)
     mPreviousIntegral = integral;
     return mIntegralAmplifier * integral;
 }
+
+void PidController::Reset()
+{
+    mPreviousIntegral = 0;
+}

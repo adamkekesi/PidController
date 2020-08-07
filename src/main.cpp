@@ -2,9 +2,9 @@
 #include "PidController.h"
 #include <stdlib.h>
 #include "Transition.h"
+#include "AirQuality.h"
 
 const unsigned int samplingRate = 500;
-const unsigned int airQualitySamplingRate = 10000;
 const double maxOutputVoltage = 5.0;
 
 const int setPointPin = PIN_A11;
@@ -19,9 +19,6 @@ const int nightPin = 3;
 const int coPin = 7;
 const int disablePin = 5;
 
-double airQualityBuffer[4] = {-1, -1, -1, -1};
-long lastAirQualitySample = 0;
-
 volatile bool co = false;
 volatile unsigned long coTriggerTime = 0;
 
@@ -34,9 +31,11 @@ double ranges[5][3] =
         {3.5, 5, 5}};
 
 int lastRange = 0;
+double lastInsertFanOutput = 0;
 
-PidController controller = PidController(0.2, 0.001, samplingRate, maxOutputVoltage);
+PidController pidController = PidController(0.2, 0.001, samplingRate, maxOutputVoltage);
 Transition *transition = NULL;
+AirQuality airQuality = AirQuality(maxOutputVoltage, airQualityPin, 10000);
 
 void onCoTrigger()
 {
@@ -65,37 +64,17 @@ double controlWithPid()
 {
   double sensorInput = (maxOutputVoltage / 1023) * analogRead(sensorPin);
   double expected = (maxOutputVoltage / 1023) * analogRead(setPointPin);
-  return controller.CalculateOutput(sensorInput, expected);
+  return pidController.CalculateOutput(sensorInput, expected);
 }
 
 double controlWithRanges()
 {
-  double sensorValue;
-  int count = 0;
-  double sum = 0;
-  for (int i = 0; i < 4; i++)
-  {
-    double val = airQualityBuffer[i];
-    if (val != -1)
-    {
-      count++;
-      sum += val;
-    }
-  }
+  double sensorValue = airQuality.getAverage();
 
-  if (count == 0)
-  {
-    sensorValue = 0;
-  }
-  else
-  {
-    sensorValue = sum / count;
-  }
-
-  double lastGoal = ranges[lastRange][2];
+  //double current = ranges[lastRange][2];
   int range;
 
-  double lastLower = ranges[lastRange][0] - 0.05;
+  double lastLower = ranges[lastRange][0];
 
   for (int i = 0; i < 5; i++)
   {
@@ -110,7 +89,7 @@ double controlWithRanges()
 
   double goal;
 
-  if (lastRange - range == 1 && sensorValue >= lastLower)
+  if (lastRange - range == 1 && sensorValue >= lastLower - 0.05)
   {
     goal = ranges[lastRange][2];
   }
@@ -123,8 +102,9 @@ double controlWithRanges()
   if (transition == NULL || transition->mGoal != goal)
   {
     delete transition;
-    transition = new Transition(lastGoal, goal, 1000L * 60L);
+    transition = new Transition(lastInsertFanOutput, goal, 1000L * 60L);
   }
+  lastInsertFanOutput = goal;
   return transition->NextFrame();
 }
 
@@ -143,30 +123,38 @@ void controlFans(int mode)
   {
     insertFanOutput = controlWithRanges();
     extractFanOutput = insertFanOutput * 0.7;
+    pidController.Reset();
   }
 
   if (mode == 3)
   {
     insertFanOutput = 2;
     extractFanOutput = controlWithPid();
+    lastInsertFanOutput = insertFanOutput;
   }
 
   if (mode == 4)
   {
     insertFanOutput = 2;
     extractFanOutput = 1.2;
+    pidController.Reset();
+    lastInsertFanOutput = insertFanOutput;
   }
 
   if (co)
   {
     extractFanOutput = 0;
     insertFanOutput = 5;
+    pidController.Reset();
+    lastInsertFanOutput = insertFanOutput;
   }
 
   if (disable)
   {
     extractFanOutput = 0;
     insertFanOutput = 0;
+    pidController.Reset();
+    lastInsertFanOutput = insertFanOutput;
   }
 
   String out = String("\nelszívó kimenet: ");
@@ -207,33 +195,6 @@ int getMode()
   return -1;
 }
 
-void sampleAirQuality()
-{
-  if (millis() >= lastAirQualitySample + airQualitySamplingRate)
-  {
-    lastAirQualitySample = millis();
-    if (airQualityBuffer[3] == -1)
-    {
-      for (int i = 0; i < 4; i++)
-      {
-        if (airQualityBuffer[i] == -1)
-        {
-          airQualityBuffer[i] = (maxOutputVoltage / 1023) * analogRead(airQualityPin);
-          break;
-        }
-      }
-    }
-    else
-    {
-      for (int i = 1; i < 4; i++)
-      {
-        airQualityBuffer[i - 1] = airQualityBuffer[i];
-      }
-      airQualityBuffer[3] = (maxOutputVoltage / 1023) * analogRead(airQualityPin);
-    }
-  }
-}
-
 void loop()
 {
   if (digitalRead(coPin))
@@ -249,7 +210,7 @@ void loop()
       co = false;
     }
   }
-  sampleAirQuality();
+  airQuality.Sample();
   int mode = getMode();
   controlFans(mode);
   String out = String("\n\nmód: ");
@@ -265,7 +226,7 @@ void loop()
   out += "\nlevegőmin buffer: ";
   for (int i = 0; i < 4; i++)
   {
-    out += airQualityBuffer[i];
+    out += airQuality.mAirQualityBuffer[i];
     out += "    ";
   }
   Serial.println(out);
