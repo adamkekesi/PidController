@@ -5,6 +5,8 @@ void AirQuality::Sample()
 {
     if (millis() >= mLastAirQualitySample + mAirQualitySamplingRate)
     {
+        double currentSensorReading = (mMaxOutputVoltage / 1023.0) * analogRead(mAirQualityPin);
+        Serial.println(currentSensorReading);
         mLastAirQualitySample = millis();
         if (mAirQualityBuffer[3] == -1)
         {
@@ -12,7 +14,7 @@ void AirQuality::Sample()
             {
                 if (mAirQualityBuffer[i] == -1)
                 {
-                    mAirQualityBuffer[i] = (mMaxOutputVoltage / 1023) * analogRead(mAirQualityPin);
+                    mAirQualityBuffer[i] = currentSensorReading;
                     break;
                 }
             }
@@ -23,7 +25,7 @@ void AirQuality::Sample()
             {
                 mAirQualityBuffer[i - 1] = mAirQualityBuffer[i];
             }
-            mAirQualityBuffer[3] = (mMaxOutputVoltage / 1023) * analogRead(mAirQualityPin);
+            mAirQualityBuffer[3] = currentSensorReading;
         }
     }
 }

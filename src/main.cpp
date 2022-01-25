@@ -62,8 +62,8 @@ void setup()
 
 double controlWithPid()
 {
-  double sensorInput = (maxOutputVoltage / 1023) * analogRead(sensorPin);
-  double expected = (maxOutputVoltage / 1023) * analogRead(setPointPin);
+  double sensorInput = (maxOutputVoltage / 1023.0) * analogRead(sensorPin);
+  double expected = (maxOutputVoltage / 1023.0) * analogRead(setPointPin);
   return pidController.CalculateOutput(sensorInput, expected);
 }
 
@@ -75,8 +75,6 @@ double controlWithRanges()
   int range;
 
   double lastLower = ranges[lastRange][0];
-
-  Serial.println(sensorValue);
 
   for (int i = 0; i < 5; i++)
   {
@@ -91,7 +89,6 @@ double controlWithRanges()
 
 
   double goal;
-  Serial.println(range);
 
   if (lastRange - range == 1 && sensorValue >= lastLower - 0.05)
   {
@@ -102,7 +99,7 @@ double controlWithRanges()
     goal = ranges[range][2];
     lastRange = range;
   }
-  Serial.println(goal);
+  
   if (transition == NULL || transition->mGoal != goal)
   {
     delete transition;
@@ -222,11 +219,11 @@ void loop()
   out += "\nco: ";
   out += co;
   out += "\nsetpoint: ";
-  out += (maxOutputVoltage / 1023) * analogRead(setPointPin);
+  out += (maxOutputVoltage / 1023.0) * analogRead(setPointPin);
   out += "\nsensor: ";
-  out += (maxOutputVoltage / 1023) * analogRead(sensorPin);
+  out += (maxOutputVoltage / 1023.0) * analogRead(sensorPin);
   out += "\nlevegőmin:  ";
-  out += (maxOutputVoltage / 1023) * analogRead(airQualityPin);
+  out += (maxOutputVoltage / 1023.0) * analogRead(airQualityPin);
   out += "\nlevegőmin buffer: ";
   for (int i = 0; i < 4; i++)
   {
