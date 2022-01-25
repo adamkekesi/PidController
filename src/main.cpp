@@ -76,6 +76,8 @@ double controlWithRanges()
 
   double lastLower = ranges[lastRange][0];
 
+  Serial.println(sensorValue);
+
   for (int i = 0; i < 5; i++)
   {
     double lower = ranges[i][0];
@@ -87,7 +89,9 @@ double controlWithRanges()
     }
   }
 
+
   double goal;
+  Serial.println(range);
 
   if (lastRange - range == 1 && sensorValue >= lastLower - 0.05)
   {
@@ -98,7 +102,7 @@ double controlWithRanges()
     goal = ranges[range][2];
     lastRange = range;
   }
-
+  Serial.println(goal);
   if (transition == NULL || transition->mGoal != goal)
   {
     delete transition;
