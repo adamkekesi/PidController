@@ -22,10 +22,10 @@ const int disablePin = 5;
 double ranges[5][3] =
     {
         {0, 2, 1.2},
-        {2, 2.25, 1.8},
+        {2, 2.25, 2},
         {2.25, 2.75, 3},
-        {2.75, 3.5, 4},
-        {3.5, 5, 4.5}};
+        {2.75, 3.5, 3.5},
+        {3.5, 5, 4}};
 
 int lastRange = 0;
 double lastInsertFanOutput = 0;
