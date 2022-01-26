@@ -16,19 +16,16 @@ const int insertFanOutputPin = 6;
 
 const int bypassPin = 8;
 const int nightPin = 3;
-const int coPin = 7;
 const int disablePin = 5;
 
-volatile bool co = false;
-volatile unsigned long coTriggerTime = 0;
 
 double ranges[5][3] =
     {
-        {0, 2, 1.3},
-        {2, 2.25, 2},
+        {0, 2, 1.2},
+        {2, 2.25, 1.8},
         {2.25, 2.75, 3},
         {2.75, 3.5, 4},
-        {3.5, 5, 5}};
+        {3.5, 5, 4.5}};
 
 int lastRange = 0;
 double lastInsertFanOutput = 0;
@@ -36,13 +33,6 @@ double lastInsertFanOutput = 0;
 PidController pidController = PidController(0.2, 0.001, samplingRate, maxOutputVoltage);
 Transition *transition = NULL;
 AirQuality airQuality = AirQuality(maxOutputVoltage, airQualityPin, 10000);
-
-void onCoTrigger()
-{
-  coTriggerTime = millis();
-  co = true;
-  analogWrite(extractFanOutputPin, 0);
-}
 
 void setup()
 {
@@ -53,9 +43,7 @@ void setup()
   pinMode(insertFanOutputPin, OUTPUT);
   pinMode(bypassPin, INPUT);
   pinMode(nightPin, INPUT);
-  pinMode(coPin, INPUT);
   pinMode(disablePin, INPUT);
-  attachInterrupt(digitalPinToInterrupt(coPin), onCoTrigger, RISING);
   TCCR1B = TCCR1B & B11111000 | B00000010;
   Serial.begin(9600);
 }
@@ -142,14 +130,6 @@ void controlFans(int mode)
     lastInsertFanOutput = insertFanOutput;
   }
 
-  if (co)
-  {
-    extractFanOutput = 0;
-    insertFanOutput = 5;
-    pidController.Reset();
-    lastInsertFanOutput = insertFanOutput;
-  }
-
   if (disable)
   {
     extractFanOutput = 0;
@@ -198,26 +178,11 @@ int getMode()
 
 void loop()
 {
-  if (digitalRead(coPin))
-  {
-    co = true;
-    coTriggerTime = millis();
-  }
-  else
-  {
-    long time = 60L * 1000L;
-    if (co && millis() > coTriggerTime + time)
-    {
-      co = false;
-    }
-  }
   airQuality.Sample();
   int mode = getMode();
   controlFans(mode);
   String out = String("\n\nmód: ");
   out += mode;
-  out += "\nco: ";
-  out += co;
   out += "\nsetpoint: ";
   out += (maxOutputVoltage / 1023.0) * analogRead(setPointPin);
   out += "\nsensor: ";
